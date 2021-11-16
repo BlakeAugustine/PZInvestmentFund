@@ -1,0 +1,211 @@
+---
+title: "PIS Day 2"
+author: "Blake Augustine"
+date: "11/15/2021"
+output: 
+  ioslides_presentation:
+    incremental: true
+    widescreen: true
+    keep_md: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packageCheck, include=FALSE}
+mypacks <- c("ggplot2","dplyr", "quantmod", "tidyverse", "finreportr", "simfinR")  # what packages are needed?
+packs <- installed.packages()   # find installed package list
+install.me <- mypacks[!(mypacks %in% packs[,"Package"])]  #what needs to be installed?
+if (length(install.me) >= 1) install.packages(install.me, repos = "http://cran.us.r-project.org")   # install (if needed)
+lapply(mypacks, library, character.only=TRUE)  # load all packages
+```
+
+## Basics of Financial Statements | **Types** {.build}
+- Balance Sheet:
+  + Reports the financial position (amount of assets, liabilities, and stockholders’ equity) of an accounting entity at a point in time.
+  
+- Statement of Cash Flow
+  + reports inflows and outflows of cash during the accounting period in the categories of operating, investing, and financing.
+  
+- Income Statement
+  + reports the revenues less the expenses during the accounting period.
+
+- There is also a statement of stockholder's equity, but we will be focusing on these three since we can pull them easily into R
+
+## Basics of Financial Statements | **Balance Sheet** {.build}
+- The Balance Sheet is a financial snapshot at a specific point in time.
+
+- Assets:
+  + Cash, Short-Term Investments, Accounts Receivable, Notes Receivable, Inventory (to be sold), Supplies, Prepaid Expenses, Long-Term Investments,         Equipment, Buildings, Land, Intangibles
+
+- Liabilities: 
+  + Accounts Payable, Accrued Expenses, Notes Payable, Taxes Payable, Unearned Revenue, Bonds Payable
+
+- Owner's Equity: 
+  + Common Stock, Retained Earnings
+  
+- Assets - Liabilities = Owner's Equity
+  + We want Assets > Liabilities (most of the time)
+
+## Basics of Financial Statements | **Income Statement** {.build}
+- The Income Statement is a measure of performance of the business. 
+
+- Revenues:
+  + Cash and promises received from delivery of goods and services.
+  + Examples: Sales Revenue, Fee Revenue, Interest Revenue, Rent Revenue
+
+- Expenses:
+  + Resources used to earn period’s revenues.
+  + Examples: Cost of Goods Sold, Wages Expense, Rent Expense, Depreciation Expense, Insurance Expense, Repair Expense, Income Tax Expense
+  
+- Revenues - Expenses = Net Income
+  + We want Revenue > Expenses
+  
+## Basics of Financial Statements | **Statement of Cash Flows** {.build}
+- The Statement of Cash Flows reports inflows and outflows of cash during the accounting period.
+
+- Cash Flows from Operating Activities:
+  + Cash collected from customers less cash paid for operating expenses such as cash paid to suppliers and employees.
+  
+- Cash Flows from Investing Activities
+  + Cash flows related to acquisition or sale of the company’s plant and equipment and investments.
+
+- Cash Flows from Financing Activities
+  + Cash flows from the receipt or payment of money to investors and creditors (except suppliers)
+
+_______________________________________________________________________________________________________________________________________________________
+
+## Financial Statements in R | **Balance Sheet** {.build}
+```{r}
+available <- simfinR_get_available_companies("WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk")
+```
+
+```{r}
+GOOG_statements <- simfinR_get_available_statements("18", "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk", silent = TRUE)
+# pl = income statement (stands for profit-loss)
+# bs = balance sheet
+# cf = cash flow
+GOOG_statements
+```
+
+```{r}
+id_companies <- 18
+api_key <- "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk"
+
+google_bs <- simfinR_get_single_fin_statement(id_sim = id_companies, type_statement = 'bs',
+period_in = 'Q3', year = 2021, api_key=api_key,
+cache_folder = 'simfim_cache')
+google_bs <- google_bs %>% na.omit()
+google_bs
+```
+
+## Financial Statements in R | **Income Statement** {.build}
+```{r}
+id_companies <- 18
+api_key <- "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk"
+
+google_pl <- simfinR_get_single_fin_statement(id_sim = id_companies, type_statement = 'pl',
+period_in = 'Q3', year = 2021, api_key=api_key,
+cache_folder = 'simfim_cache')
+google_pl <- google_pl %>% na.omit()
+google_pl
+```
+
+## Financial Statements in R | **Statement of Cash Flows** {.build}
+```{r}
+id_companies <- 18
+api_key <- "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk"
+
+google_cf <- simfinR_get_single_fin_statement(id_sim = id_companies, type_statement = 'cf',
+period_in = 'Q3', year = 2021, api_key=api_key,
+cache_folder = 'simfim_cache')
+google_cf <- google_cf %>% na.omit()
+google_cf
+```
+
+## Accounting Ratios | **The "Important" Ones!** {.build}
+- Remember when comparing ratios, compare them to other firms in the same industry
+
+- Working Capital Ratio:
+  + Company's ability to pay its current liabilities with its current assets
+  + Divide current assets by current liabilities.
+  + Different than total assets/liabilities!
+```{r}
+WC_ratio <- 184110000000 / 61782000000
+WC_ratio
+```
+
+- Quick Ratio:
+  + how well current liabilities are covered by cash and by items with a ready cash value
+  + (current assets - inventory) / current liabilities
+```{r}
+quick_ratio <- (184110000000 - 1278000000) / 61782000000
+quick_ratio
+```
+
+- Earnings per Share:
+  + measures net income earned on each share of a company's common stock
+  + net income / shares outstanding
+```{r}
+EPS <- 1.8936e+10 / 722000000
+EPS
+```
+
+- Price/Earnings Ratio
+  + investors' assessments of those future earnings
+  + Share Price / EPS
+```{r}
+PE_ratio <- 2969.04 / EPS
+PE_ratio
+```
+
+- Debt/Equity Ratio
+  + evaluate a company's financial leverage
+  + <1 indicates a low risk, safe investment
+  + total liabilities / total shareholders equity
+```{r}
+DE_ratio <- 102836000000 / 244567000000
+DE_ratio
+```
+
+- Return on Equity
+  + return on net assets
+  + Net Income / Shareholder's Equity
+```{r}
+(1.8936e+10 / 244567000000) * 100
+# percent %
+```
+
+_______________________________________________________________________________________________________________________________________________________
+
+## IPOs | **Basics** {.build}
+
+- Initial Public Offering
+  + The process of offering shares of a private corporation to the public in a new stock issuance
+  + Usually really good returns if bought early!
+  + Financial Ratios aren't always available for them, so more robust analysis needs to be conducted
+
+- Andrew J. Chalk and John W. Peavy, III: *Initial Public Offerings: Daily Returns, Offering Types and the Price Effect*
+  + Found that IPOs generate "abnormally high returns" following issuance.
+  + Returns continued a few days after issuance too
+  + Returns much greater for stocks priced below $1
+  
+## Final Notes | {.build}
+- Recently, stocks have seen higher volatility following earnings reports (both directions)
+  + Could be from distrust in the market, or other reasons
+- Using our $10k in reserves we could take advantage of some of these movements, but it's going to require some analysis!
+
+## Groups! | {.build}
+- Make 2 groups:
+  + One for financial statements and ratio calculation
+  + One for IPOs and their dates
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,236 @@
+---
+title: "PIS Day 1 - Intro to R"
+author: "Blake Augustine"
+date: "10/29/2021"
+output: 
+  ioslides_presentation:
+    incremental: true
+    widescreen: true
+    keep_md: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packageCheck, include=FALSE}
+mypacks <- c("ggplot2","dplyr", "quantmod", "forecast", "tseries", "aTSA", "fpp2", "urca", "tidyverse", "astsa", "triangle")  # what packages are needed?
+packs <- installed.packages()   # find installed package list
+install.me <- mypacks[!(mypacks %in% packs[,"Package"])]  #what needs to be installed?
+if (length(install.me) >= 1) install.packages(install.me, repos = "http://cran.us.r-project.org")   # install (if needed)
+lapply(mypacks, library, character.only=TRUE)  # load all packages
+```
+
+## Basics of R and RMarkdown
+**R Chunks**
+```{r}
+#```{r}
+#code goes here
+#code will run when outputted into a pdf, Rmd, etc.
+#```
+```
+- By adding certain parameters to the {r} area, you can show code with output, no code with output, code with no output, etc. 
+    + You can also click the gear in RMarkdown to do this
+- **R Markdown:** When you `knit` a .Rmd file, your output will be whatever you decide in the header.
+    + This can be a pdf, .md, slideshow, html, etc.
+
+## Objects | **Workspace** {.build}
+- This is the "environment" where R objects live. 
+    + See the **Environment** tab in Rstudio
+- Can be data sets, objects, lists, and more.
+     + We will likely focus mostly on time series data sets in this group
+- Let's create a basic object:
+```{r}
+object <- c(1, 2, 3, "A", "B", "C", TRUE, FALSE)
+# Here we have doubles, characters, and logical data types
+# The character type will supersede (coerce) the other two, so our output 
+# will be in the notation for character with " "
+print(object)
+```
+
+
+## Importing stock data using quantmod | **Libraries** {.build}
+- Importing libraries allows us to access more options for plots, code, data 
+  analysis, etc.
+```{r, eval=FALSE}
+# Type this into the console (bottom left panel)
+install.packages("quantmod")
+# Then type this one into an R chunk at the top of your document
+library(quantmod)
+```
+- `quantmod` package allows us to pull stock data from the internet as a 
+      time series data set
+- Let's try this with Paypal from 2016-2021:
+    
+## Pulling Paypal Data from Yahoo | **Code** {.build}
+```{r, eval=FALSE}
+tickers = "PYPL"
+getSymbols(tickers, from = "2010-01-01", to = "XXXX-XX-XX", src = "yahoo", 
+           return.class = "ts")
+period = time(PYPL)
+PYPL = as.data.frame(PYPL)
+```
+- Our object is now created
+
+
+## Viewing our data set | **Two Ways** {.build}
+- We can look at our new data set by clicking on it in the `environment`
+- Or we can use `head()`
+```{r, include=FALSE}
+tickers = "PYPL"
+getSymbols(tickers, from = "2010-01-01", src = "yahoo", return.class = "ts")
+period = time(PYPL)
+PYPL = as.data.frame(PYPL)
+PYPL$Period = period
+```
+
+```{r}
+head(PYPL)
+tail(PYPL)
+```
+
+_______________________________________________________________________________________________________________________________________________________
+
+## Basic Plots: Line Graph
+```{r}
+plot(PYPL$Period, PYPL$PYPL.Adjusted, 
+     type = "l", col = "blue", 
+     ylab = "Price", xlab = "Period", main = "Adjusted Prices PYPL")
+legend(x = "topleft", legend = "PYPL", lty = 1, col = "blue")
+```
+
+
+## Basic Plots: Histogram 
+```{r}
+hist(PYPL$PYPL.Adjusted)
+```
+
+_______________________________________________________________________________________________________________________________________________________
+
+## ggplot
+- `ggplot2` is a library that makes plotting more in-depth
+    + allows you to plot with more than 2 data points with size, color, shape, etc.
+    + allows you to add regression lines, flip coordinates, and more.
+```{r, echo=FALSE}
+library(ggplot2)
+ggplot(PYPL, aes(x = Period, y = PYPL.Adjusted)) + geom_point(color = "Blue", size=0.4, alpha = 0.75) + 
+  geom_smooth(method="lm", color="Red", linetype=3) + ggtitle("Paypal Time Series")
+# OLS Fit
+```
+
+_______________________________________________________________________________________________________________________________________________________
+
+## Two Main Focuses in R
+**Discounted Cash Flows (DCF)**
+
+- Good for present calculations, or how under or overvalued a stock might be
+  in the current period
+  
+- Some predictability, but not perfect
+
+- We will get to this in the future
+
+_______________________________________________________________________________________________________________________________________________________
+
+**Time Series Forecasting**
+
+- Good for future valuation, or where a stock price may end up in `n` periods
+
+- Better predictability, but requires some robust understanding of the model
+
+```{r}
+PYPL_ts <- PYPL %>% summarize(PYPL.Adjusted) %>% as.ts(PYPL.Adjusted)
+tail(PYPL_ts)
+```
+
+```{r}
+trend.test(PYPL_ts, plot = TRUE)
+# p-value < 0.05, so there is a trend to the data
+```
+
+```{r}
+paypal <- window(PYPL_ts)
+forecast <- holt(paypal, h=5)
+forecast
+# 5 period forecast, compare to tail of PYPL_ts
+```
+
+```{r}
+armod <- lm(PYPL.Adjusted ~ lag(PYPL.Adjusted), data = PYPL_ts)
+armod
+summary(armod)
+```
+
+```{r}
+#order = c(p, d, q)
+ARIMA <- arima(PYPL_ts, order = c(1, 1, 1))
+ARIMA
+ARIMA_fit <- PYPL_ts - resid(ARIMA)
+predict_ARIMA <- predict(ARIMA)
+predict_ARIMA$pred[1]
+predict(ARIMA,n.ahead=5)
+ts.plot(PYPL_ts)
+ARIMA_forecasts <- predict(ARIMA, n.ahead = 5)$pred
+ARIMA_forecast_se <- predict(ARIMA, n.ahead = 5)$se
+
+points(ARIMA_forecasts, type = "l", col = 2)
+
+points(ARIMA_forecasts - 2*ARIMA_forecast_se, type = "l", col = 2, lty = 2)
+points(ARIMA_forecasts + 2*ARIMA_forecast_se, type = "l", col = 2, lty = 2)
+```
+
+```{r}
+#order = c(p, d, q)
+ARIMA <- arima(PYPL_ts, order = c(1, 1, 1))
+ARIMA
+ARIMA_fit <- PYPL_ts - resid(ARIMA)
+predict_ARIMA <- predict(ARIMA)
+predict_ARIMA$pred[1]
+predict(ARIMA,n.ahead=5)
+ts.plot(PYPL_ts, xlim=c(1580, 1600), ylim=c(200, 280))
+ARIMA_forecasts <- predict(ARIMA, n.ahead = 5)$pred
+ARIMA_forecast_se <- predict(ARIMA, n.ahead = 5)$se
+
+points(ARIMA_forecasts, type = "l", col = 2)
+
+points(ARIMA_forecasts - 2*ARIMA_forecast_se, type = "l", col = 2, lty = 2)
+points(ARIMA_forecasts + 2*ARIMA_forecast_se, type = "l", col = 2, lty = 2)
+```
+
+_______________________________________________________________________________________________________________________________________________________
+
+**Finally, let's take a look at our portfolio!**
+
+```{r}
+portfolio <- read.csv("portfolio.csv")
+print(portfolio)
+```
+
+```{r}
+sectors <- portfolio %>% select(firm, shares, market_value, sector) %>% group_by(sector) %>% summarize(n = n(), prop = n/26)
+sectors
+# We cover 6/11 sectors defined by finviz
+ggplot(sectors, aes(x = sector, y = n)) + geom_bar(stat="identity", width=1, color="white") + coord_flip()
+```
+
+_______________________________________________________________________________________________________________________________________________________
+
+And we will leave it there for today!
+
+"Homework": Look at portfolio and start thinking of a sector you would like to monitor each week, and keep practicing in R!
+
+Questions?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
