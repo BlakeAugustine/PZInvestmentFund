@@ -1,5 +1,5 @@
 ---
-title: "PIS Day 2"
+title: "PIS Day 2 - Financial Statements and IPOs"
 author: "Blake Augustine"
 date: "11/15/2021"
 output: 
@@ -14,11 +14,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r packageCheck, include=FALSE}
-mypacks <- c("ggplot2","dplyr", "quantmod", "tidyverse", "finreportr", "simfinR")  # what packages are needed?
-packs <- installed.packages()   # find installed package list
-install.me <- mypacks[!(mypacks %in% packs[,"Package"])]  #what needs to be installed?
-if (length(install.me) >= 1) install.packages(install.me, repos = "http://cran.us.r-project.org")   # install (if needed)
-lapply(mypacks, library, character.only=TRUE)  # load all packages
+# This code chunk is a useful way to install and load packages at the same time
+mypacks <- c("ggplot2","dplyr", "quantmod", "tidyverse", "finreportr", "simfinR")  # Put any packages needed in this vector
+packs <- installed.packages()   
+install.me <- mypacks[!(mypacks %in% packs[,"Package"])]  
+if (length(install.me) >= 1) install.packages(install.me, repos = "http://cran.us.r-project.org")  
+lapply(mypacks, library, character.only=TRUE)  
 ```
 
 ## Basics of Financial Statements | **Types** {.build}
@@ -96,7 +97,7 @@ api_key <- "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk"
 google_bs <- simfinR_get_single_fin_statement(id_sim = id_companies, type_statement = 'bs',
 period_in = 'Q3', year = 2021, api_key=api_key,
 cache_folder = 'simfim_cache')
-google_bs <- google_bs %>% na.omit()
+google_bs <- google_bs %>% select(acc_name, acc_value) %>% as.data.frame()
 google_bs
 ```
 
@@ -108,7 +109,7 @@ api_key <- "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk"
 google_pl <- simfinR_get_single_fin_statement(id_sim = id_companies, type_statement = 'pl',
 period_in = 'Q3', year = 2021, api_key=api_key,
 cache_folder = 'simfim_cache')
-google_pl <- google_pl %>% na.omit()
+google_pl <- google_pl %>% select(acc_name, acc_value)
 google_pl
 ```
 
@@ -120,7 +121,7 @@ api_key <- "WAaNgczJ0jW3urxYWXAr4TyujkEFVFvk"
 google_cf <- simfinR_get_single_fin_statement(id_sim = id_companies, type_statement = 'cf',
 period_in = 'Q3', year = 2021, api_key=api_key,
 cache_folder = 'simfim_cache')
-google_cf <- google_cf %>% na.omit()
+google_cf <- google_cf  %>% select(acc_name, acc_value)
 google_cf
 ```
 
@@ -132,7 +133,7 @@ google_cf
   + Divide current assets by current liabilities.
   + Different than total assets/liabilities!
 ```{r}
-WC_ratio <- 184110000000 / 61782000000
+WC_ratio <- google_bs[21,2] / google_bs[57,2] # Accesses the data set google_bs, selects row 21, column 2, then row 57, column 2
 WC_ratio
 ```
 
@@ -140,7 +141,7 @@ WC_ratio
   + how well current liabilities are covered by cash and by items with a ready cash value
   + (current assets - inventory) / current liabilities
 ```{r}
-quick_ratio <- (184110000000 - 1278000000) / 61782000000
+quick_ratio <- (google_bs[21,2] - google_bs[8,2]) / google_bs[57,2]
 quick_ratio
 ```
 
@@ -148,7 +149,7 @@ quick_ratio
   + measures net income earned on each share of a company's common stock
   + net income / shares outstanding
 ```{r}
-EPS <- 1.8936e+10 / 722000000
+EPS <- google_pl[55,2] / 722000000
 EPS
 ```
 
@@ -165,7 +166,7 @@ PE_ratio
   + <1 indicates a low risk, safe investment
   + total liabilities / total shareholders equity
 ```{r}
-DE_ratio <- 102836000000 / 244567000000
+DE_ratio <- google_bs[73,2] / google_bs[84,2]
 DE_ratio
 ```
 
@@ -173,7 +174,7 @@ DE_ratio
   + return on net assets
   + Net Income / Shareholder's Equity
 ```{r}
-(1.8936e+10 / 244567000000) * 100
+(google_pl[55,2] / google_bs[84,2]) * 100
 # percent %
 ```
 
