@@ -1,0 +1,121 @@
+---
+title: "DPLYR Crash Course"
+author: "Blake Augustine"
+date: "11/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packageCheck, include=FALSE}
+mypacks <- c("ggplot2","dplyr", "quantmod", "tidyverse")  # what packages are needed?
+packs <- installed.packages()   # find installed package list
+install.me <- mypacks[!(mypacks %in% packs[,"Package"])]  #what needs to be installed?
+if (length(install.me) >= 1) install.packages(install.me, repos = "http://cran.us.r-project.org")   # install (if needed)
+lapply(mypacks, library, character.only=TRUE)  # load all packages
+```
+
+**Basics of DPLYR:**
+- DPLYR is used to cut down data sets to criteria you are looking for
+
+Basic commands to use:
+
+`%>%`
+- "piping" operator, basically indicates sequential application of dplyr functions
+- x %>% y %>% z means you take x, then do y, then do z all in sequence
+- %>% can be used for other functions besides dplyr ones
+  + you can pipe in a ggplot() line, summary(), mean(), print(), and others!
+
+`mutate()`
+- Creates new variables in an existing data set by applying a function to a column
+
+```{r}
+# Start by creating a basic data frame
+object1 <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+object2 <- c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+dataframe <- as.data.frame(cbind(object1, object2)) # cbind means 'column bind', combines two columns or vectors into a data frame
+```
+
+```{r}
+# Use mutate() to create an object for the squared values of object1
+# mutate("new object name" = function of existing object)
+dataframe2 <- dataframe %>% mutate(objsqr = object1^2)
+dataframe2
+# Plotting the new mutated variable
+ggplot(dataframe2, aes(x = object1, y = object1)) + geom_line(color = "blue", size = 1) + geom_line(aes(x = object1, y = objsqr), color = "red", size = 1)
+```
+
+`select()`
+- Selects specific variables in a data set, then returns a new data set with those selected ones
+- Lets look at stock data to try this:
+
+```{r}
+# Start by creating a data frame for stock data
+symbols <- "PYPL"
+getSymbols(symbols, from = "2020-01-01", to = "2020-12-31", src = "yahoo")
+PYPL <- as.data.frame(PYPL)
+head(PYPL)
+```
+
+```{r}
+# Now lets select some variables:
+PYPL <- PYPL %>% select(PYPL.Adjusted, PYPL.Volume)
+PYPL
+# Now we only have the two selected variables
+```
+
+`filter()`
+- Filters the observations for a specific criteria
+
+```{r}
+# Let's filter for days with high volume:
+PYPL <- PYPL %>% filter(PYPL.Volume > 10000000)
+PYPL
+# Now we have the same columns, but only rows where the volume is greater than 10000000
+```
+
+`slice()`
+- Cuts the data set
+- Usually just to get a small subset of the data to display
+
+```{r}
+# Slice the first five observations
+PYPL <- PYPL %>% slice(1:5)
+PYPL
+# Now we have the first 5 observations
+```
+
+- After all of our commands, we are left with a data set of 2 variables with the most recent 5 observations containing high volume 
+- There are more you can look into but these are probably the most commonly used!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
