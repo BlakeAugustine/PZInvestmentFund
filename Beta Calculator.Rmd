@@ -1,0 +1,63 @@
+---
+title: "Beta Calculator"
+author: "Blake Augustine"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packageCheck, include=FALSE}
+mypacks <- c("ggplot2","dplyr", "quantmod", "tidyverse", "finreportr", "simfinR", "pkr")  # what packages are needed?
+packs <- installed.packages()   # find installed package list
+install.me <- mypacks[!(mypacks %in% packs[,"Package"])]  #what needs to be installed?
+if (length(install.me) >= 1) install.packages(install.me, repos = "http://cran.us.r-project.org")   # install (if needed)
+lapply(mypacks, library, character.only=TRUE)  # load all packages
+
+set.seed(100)
+```
+
+```{r, include = FALSE}
+#      HOW TO USE
+# - Google your firm and the ticker associated with it
+# - No input needed for Block1
+# - Replace any *AAPL* in Block2 with your firms ticker
+# - Copy and paste Block2 as many times as needed for however many firms
+# - Knit the document to calculate beta
+```
+
+```{r, include = FALSE}
+# Block1
+getSymbols("^GSPC", src = "yahoo", from = as.Date("2016-01-01"))
+SP <- as.data.frame(GSPC) %>% select(GSPC.Adjusted) %>% mutate(percent_change = ((GSPC.Adjusted/lag(GSPC.Adjusted) - 1) * 100)) %>% mutate(returns = (GSPC.Adjusted/lag(GSPC.Adjusted) - 1))
+```
+
+```{r, echo = FALSE}
+# Block2
+# Input your ticker below (replace "AAPL")
+ticker <- "AAPL" 
+
+getSymbols(ticker, src = "yahoo", from = as.Date("2016-01-01"))
+
+# Replace all AAPL with your firm's ticker (7 total)
+AAPL <- as.data.frame(AAPL) %>% select(AAPL.Adjusted) %>% mutate(percent_change = ((AAPL.Adjusted/lag(AAPL.Adjusted) - 1) * 100)) %>% mutate(returns = (AAPL.Adjusted/lag(AAPL.Adjusted) - 1))
+
+# Replace AAPL in the line below (1 total)
+cov <- cov(AAPL$returns[2:1521], SP$returns[2:1521])
+var <- var(SP$returns[2:1521])
+beta <- cov/var
+beta
+```
+
+
+
+
+
+
+
+
+
+
+
+
